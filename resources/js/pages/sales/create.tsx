@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Calendar, Minus, Package, Plus, Save, ShoppingCart, Trash2, User } from 'lucide-react';
+import { ArrowLeft, Calendar, Minus, Package, Plus, Save, ShoppingCart, Trash2, User, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -63,6 +63,7 @@ export default function SalesCreate({ customers, products }: SalesCreateProps) {
     const [selectedProduct, setSelectedProduct] = useState<string>('');
     const [quantity, setQuantity] = useState<number>(1);
     const [installments, setInstallments] = useState<Installment[]>([]);
+    const [isCustomInstallments, setIsCustomInstallments] = useState<boolean>(false);
 
     const { data, setData, post, processing, errors } = useForm({
         customer_id: '',
@@ -170,9 +171,46 @@ export default function SalesCreate({ customers, products }: SalesCreateProps) {
     };
 
     const updateInstallment = (index: number, field: keyof Installment, value: string | number) => {
-        setInstallments(installments.map((installment, i) =>
+        const updatedInstallments = installments.map((installment, i) =>
             i === index ? { ...installment, [field]: value } : installment
-        ));
+        );
+
+        // Se está editando o valor, redistribuir automaticamente o restante
+        if (field === 'valor') {
+            const newValue = typeof value === 'number' ? value : parseFloat(value.toString()) || 0;
+            const total = getFinalValue();
+
+            // Calcular valores já definidos (incluindo o que está sendo editado)
+            const editedInstallment = { ...updatedInstallments[index], valor: newValue };
+            const otherInstallments = updatedInstallments.filter((_, i) => i !== index);
+            const remainingValue = total - newValue;
+            const remainingCount = otherInstallments.length;
+
+            if (remainingCount > 0 && remainingValue >= 0) {
+                const valuePerRemaining = remainingValue / remainingCount;
+
+                const finalInstallments = updatedInstallments.map((installment, i) => {
+                    if (i === index) {
+                        return editedInstallment;
+                    }
+                    return {
+                        ...installment,
+                        valor: valuePerRemaining
+                    };
+                });
+
+                setInstallments(finalInstallments);
+                setIsCustomInstallments(true);
+                return;
+            }
+        }
+
+        setInstallments(updatedInstallments);
+
+        // Marcar como customizado quando o usuário edita uma parcela
+        if (field === 'valor') {
+            setIsCustomInstallments(true);
+        }
     };
 
     const removeInstallment = (index: number) => {
@@ -197,6 +235,15 @@ export default function SalesCreate({ customers, products }: SalesCreateProps) {
         }
 
         setInstallments(newInstallments);
+        setIsCustomInstallments(false); // Reset para não customizado
+    };
+
+
+
+    const resetToEqualInstallments = () => {
+        if (installments.length > 0) {
+            generateEqualInstallments(installments.length);
+        }
     };
 
     const getTotal = () => {
@@ -207,6 +254,19 @@ export default function SalesCreate({ customers, products }: SalesCreateProps) {
         const total = getTotal();
         const desconto = parseFloat(data.desconto) || 0;
         return total - desconto;
+    };
+
+    const getInstallmentsTotal = () => {
+        return installments.reduce((sum, installment) => sum + (installment.valor || 0), 0);
+    };
+
+    const getInstallmentsDifference = () => {
+        return getFinalValue() - getInstallmentsTotal();
+    };
+
+    const hasInstallmentsDifference = () => {
+        const difference = Math.abs(getInstallmentsDifference());
+        return difference > 0.01; // Tolerância de 1 centavo para arredondamentos
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -258,7 +318,7 @@ export default function SalesCreate({ customers, products }: SalesCreateProps) {
                 <form onSubmit={handleSubmit}>
                     <div className="grid gap-6 lg:grid-cols-2">
                         {/* Informações da Venda */}
-                        <div className="space-y-6">
+                        <div className="space-y-6 order-2 lg:order-1">
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2">
@@ -382,7 +442,7 @@ export default function SalesCreate({ customers, products }: SalesCreateProps) {
                         </div>
 
                         {/* Carrinho e Resumo */}
-                        <div className="space-y-6">
+                        <div className="space-y-6 order-1 lg:order-2">
                             {/* Carrinho */}
                             <Card>
                                 <CardHeader>
@@ -394,7 +454,8 @@ export default function SalesCreate({ customers, products }: SalesCreateProps) {
                                 <CardContent>
                                     {cart.length > 0 ? (
                                         <div className="space-y-4">
-                                            <div className="rounded-md border">
+                                            {/* Desktop Table */}
+                                            <div className="hidden md:block rounded-md border">
                                                 <Table>
                                                     <TableHeader>
                                                         <TableRow>
@@ -460,6 +521,71 @@ export default function SalesCreate({ customers, products }: SalesCreateProps) {
                                                     </TableBody>
                                                 </Table>
                                             </div>
+
+                                            {/* Mobile Cards */}
+                                            <div className="md:hidden space-y-3">
+                                                {cart.map((item) => (
+                                                    <div key={item.product_id} className="border rounded-lg p-4 space-y-3">
+                                                        <div className="flex justify-between items-start">
+                                                            <div className="flex-1">
+                                                                <h4 className="font-medium text-sm">{item.product.nome}</h4>
+                                                                <p className="text-xs text-muted-foreground mt-1">
+                                                                    {formatCurrency(item.preco_unitario)} cada
+                                                                </p>
+                                                            </div>
+                                                            <Button
+                                                                type="button"
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onClick={() => removeFromCart(item.product_id)}
+                                                                className="ml-2"
+                                                            >
+                                                                <Trash2 className="h-3 w-3" />
+                                                            </Button>
+                                                        </div>
+
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="text-sm text-muted-foreground">Qtd:</span>
+                                                                <Button
+                                                                    type="button"
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    onClick={() => updateCartItemQuantity(item.product_id, item.quantidade - 1)}
+                                                                >
+                                                                    <Minus className="h-3 w-3" />
+                                                                </Button>
+                                                                <span className="w-8 text-center text-sm font-medium">{item.quantidade}</span>
+                                                                <Button
+                                                                    type="button"
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    onClick={() => updateCartItemQuantity(item.product_id, item.quantidade + 1)}
+                                                                >
+                                                                    <Plus className="h-3 w-3" />
+                                                                </Button>
+                                                            </div>
+
+                                                            <div className="text-right">
+                                                                <p className="text-xs text-muted-foreground">Total</p>
+                                                                <p className="font-medium">{formatCurrency(item.subtotal)}</p>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-sm text-muted-foreground">Preço:</span>
+                                                            <Input
+                                                                type="number"
+                                                                step="0.01"
+                                                                min="0"
+                                                                value={item.preco_unitario}
+                                                                onChange={(e) => updateItemPrice(item.product_id, parseFloat(e.target.value) || 0)}
+                                                                className="flex-1 text-sm"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
                                     ) : (
                                         <div className="text-center py-8 text-muted-foreground">
@@ -481,7 +607,7 @@ export default function SalesCreate({ customers, products }: SalesCreateProps) {
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent className="space-y-4">
-                                        <div className="flex gap-2">
+                                        <div className="flex gap-2 flex-wrap">
                                             <Button type="button" size="sm" onClick={() => generateEqualInstallments(2)}>
                                                 2x
                                             </Button>
@@ -498,40 +624,117 @@ export default function SalesCreate({ customers, products }: SalesCreateProps) {
                                                 <Plus className="mr-2 h-4 w-4" />
                                                 Adicionar Parcela
                                             </Button>
+                                            {isCustomInstallments && installments.length > 0 && (
+                                                <Button type="button" size="sm" variant="outline" onClick={resetToEqualInstallments}>
+                                                    <RefreshCw className="mr-2 h-4 w-4" />
+                                                    Igualar Parcelas
+                                                </Button>
+                                            )}
                                         </div>
 
+                                        {isCustomInstallments && (
+                                            <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 p-2 rounded">
+                                                <AlertTriangle className="h-4 w-4" />
+                                                <span>Parcelas customizadas - valores editados manualmente</span>
+                                            </div>
+                                        )}
+
                                         {installments.length > 0 && (
-                                            <div className="space-y-2">
-                                                {installments.map((installment, index) => (
-                                                    <div key={index} className="flex gap-2 items-center">
-                                                        <span className="text-sm w-16">#{index + 1}</span>
-                                                        <Input
-                                                            type="number"
-                                                            step="0.01"
-                                                            min="0"
-                                                            placeholder="Valor"
-                                                            value={installment.valor}
-                                                            onChange={(e) => updateInstallment(index, 'valor', parseFloat(e.target.value) || 0)}
-                                                            className="flex-1"
-                                                        />
-                                                        <Input
-                                                            type="date"
-                                                            value={installment.data_vencimento}
-                                                            onChange={(e) => updateInstallment(index, 'data_vencimento', e.target.value)}
-                                                            className="flex-1"
-                                                        />
-                                                        <Button
-                                                            type="button"
-                                                            size="sm"
-                                                            variant="outline"
-                                                            onClick={() => removeInstallment(index)}
-                                                        >
-                                                            <Trash2 className="h-3 w-3" />
-                                                        </Button>
+                                            <div className="space-y-3">
+                                                {/* Desktop Layout */}
+                                                <div className="hidden md:block space-y-2">
+                                                    {installments.map((installment, index) => (
+                                                        <div key={index} className="flex gap-2 items-center">
+                                                            <span className="text-sm w-16 font-medium">#{index + 1}</span>
+                                                            <Input
+                                                                type="number"
+                                                                step="0.01"
+                                                                min="0"
+                                                                placeholder="Valor"
+                                                                value={installment.valor}
+                                                                onChange={(e) => updateInstallment(index, 'valor', parseFloat(e.target.value) || 0)}
+                                                                className="flex-1"
+                                                            />
+                                                            <Input
+                                                                type="date"
+                                                                value={installment.data_vencimento}
+                                                                onChange={(e) => updateInstallment(index, 'data_vencimento', e.target.value)}
+                                                                className="flex-1"
+                                                            />
+                                                            <Button
+                                                                type="button"
+                                                                size="sm"
+                                                                variant="outline"
+                                                                onClick={() => removeInstallment(index)}
+                                                            >
+                                                                <Trash2 className="h-3 w-3" />
+                                                            </Button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+
+                                                {/* Mobile Layout */}
+                                                <div className="md:hidden space-y-3">
+                                                    {installments.map((installment, index) => (
+                                                        <div key={index} className="border rounded-lg p-3 space-y-3">
+                                                            <div className="flex justify-between items-center">
+                                                                <span className="text-sm font-medium">Parcela #{index + 1}</span>
+                                                                <Button
+                                                                    type="button"
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    onClick={() => removeInstallment(index)}
+                                                                >
+                                                                    <Trash2 className="h-3 w-3" />
+                                                                </Button>
+                                                            </div>
+
+                                                            <div className="space-y-2">
+                                                                <div>
+                                                                    <Label className="text-xs text-muted-foreground">Valor (R$)</Label>
+                                                                    <Input
+                                                                        type="number"
+                                                                        step="0.01"
+                                                                        min="0"
+                                                                        placeholder="0,00"
+                                                                        value={installment.valor}
+                                                                        onChange={(e) => updateInstallment(index, 'valor', parseFloat(e.target.value) || 0)}
+                                                                        className="text-sm"
+                                                                    />
+                                                                </div>
+
+                                                                <div>
+                                                                    <Label className="text-xs text-muted-foreground">Data de Vencimento</Label>
+                                                                    <Input
+                                                                        type="date"
+                                                                        value={installment.data_vencimento}
+                                                                        onChange={(e) => updateInstallment(index, 'data_vencimento', e.target.value)}
+                                                                        className="text-sm"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <div className="space-y-2 pt-2 border-t">
+                                                    <div className="flex justify-between text-sm">
+                                                        <span className="text-muted-foreground">Total das parcelas:</span>
+                                                        <span className={hasInstallmentsDifference() ? 'text-red-600 font-medium' : 'text-muted-foreground'}>
+                                                            {formatCurrency(getInstallmentsTotal())}
+                                                        </span>
                                                     </div>
-                                                ))}
-                                                <div className="text-sm text-muted-foreground">
-                                                    Total das parcelas: {formatCurrency(installments.reduce((sum, p) => sum + (p.valor || 0), 0))}
+                                                    <div className="flex justify-between text-sm">
+                                                        <span className="text-muted-foreground">Valor da venda:</span>
+                                                        <span className="text-muted-foreground">{formatCurrency(getFinalValue())}</span>
+                                                    </div>
+                                                    {hasInstallmentsDifference() && (
+                                                        <div className="flex justify-between text-sm font-medium">
+                                                            <span className="text-red-600">Diferença:</span>
+                                                            <span className="text-red-600">
+                                                                {getInstallmentsDifference() > 0 ? '+' : ''}{formatCurrency(getInstallmentsDifference())}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         )}
