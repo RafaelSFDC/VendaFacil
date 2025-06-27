@@ -18,9 +18,6 @@ RUN npm ci --omit=dev --silent
 COPY resources/ ./resources/
 COPY public/ ./public/
 
-# Definir variáveis de ambiente para o build
-ENV VITE_APP_NAME="Venda Fácil"
-
 # Build dos assets
 RUN npm run build
 
@@ -45,13 +42,14 @@ RUN apk add --no-cache \
 
 # Instalar extensões PHP
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) \
-        pdo_sqlite \
-        mbstring \
-        xml \
-        gd \
-        zip \
-        opcache
+    && docker-php-ext-install \
+    pdo_sqlite \
+    pdo_mysql \
+    mbstring \
+    xml \
+    zip \
+    gd \
+    opcache
 
 # Instalar Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -79,12 +77,6 @@ RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
     && chmod -R 755 /var/www/html/bootstrap/cache
 
-# Criar diretório do banco de dados se não existir
-RUN mkdir -p /var/www/html/database \
-    && touch /var/www/html/database/database.sqlite \
-    && chown -R www-data:www-data /var/www/html/database \
-    && chmod -R 755 /var/www/html/database
-
 # Copiar configurações do Nginx
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/default-https.conf /etc/nginx/http.d/default.conf
@@ -107,36 +99,8 @@ RUN mkdir -p /var/log/supervisor \
     && mkdir -p /var/www/html/storage/framework/sessions \
     && mkdir -p /var/www/html/storage/framework/views
 
-# Remover dependências de desenvolvimento do Composer
-RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
-
 # Expor porta
 EXPOSE 80
 
 # Comando de inicialização
 CMD ["/usr/local/bin/start.sh"]
-
-# Stage para desenvolvimento
-FROM php-base AS development
-
-# Instalar dependências de desenvolvimento
-RUN apk add --no-cache nodejs npm
-
-# Copiar código fonte
-COPY . .
-
-# Manter dependências de desenvolvimento
-RUN composer install --optimize-autoloader --no-interaction --prefer-dist
-
-# Instalar dependências do Node.js
-RUN npm install
-
-# Script de inicialização para desenvolvimento
-COPY docker/start-dev.sh /usr/local/bin/start-dev.sh
-RUN chmod +x /usr/local/bin/start-dev.sh
-
-# Expor portas para desenvolvimento
-EXPOSE 8000 5173
-
-# Comando de inicialização para desenvolvimento
-CMD ["/usr/local/bin/start-dev.sh"]

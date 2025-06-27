@@ -64,7 +64,3 @@ Homestead.yaml
 # Docker files (except the ones we need)
 docker-compose*.yml
 Dockerfile.dev
-scripts/deploy.sh
-
-# Database (will be created in container)
-database/database.sqlite

@@ -71,14 +71,14 @@ FORCE_HTTPS=true          # Forçar HTTPS em produção
 ### Build Local
 ```bash
 # Build da imagem
-docker build -t venda-facil .
+docker build -t vendafacil .
 
 # Executar localmente
 docker run -p 8080:80 \
   -e APP_ENV=production \
   -e APP_DEBUG=false \
   -e APP_URL=http://localhost:8080 \
-  venda-facil
+  vendafacil
 ```
 
 ### Docker Compose

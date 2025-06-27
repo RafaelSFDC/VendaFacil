@@ -10,25 +10,25 @@ RUN apk add --no-cache \
     zip \
     unzip \
     curl \
+    git \
+    nodejs \
+    npm \
     oniguruma-dev \
     libxml2-dev \
     freetype-dev \
     libjpeg-turbo-dev \
     libpng-dev \
-    libzip-dev \
-    nodejs \
-    npm \
-    bash \
-    git
+    libzip-dev
 
 # Instalar extensões PHP
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) \
-        pdo_sqlite \
-        mbstring \
-        xml \
-        gd \
-        zip
+    && docker-php-ext-install \
+    pdo_sqlite \
+    pdo_mysql \
+    mbstring \
+    xml \
+    zip \
+    gd
 
 # Instalar Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -36,25 +36,21 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Configurar diretório de trabalho
 WORKDIR /var/www/html
 
-# Copiar arquivos de configuração
+# Copiar arquivos de configuração (HTTP simples para desenvolvimento)
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/default.conf /etc/nginx/http.d/default.conf
-COPY docker/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Configurar PHP para desenvolvimento
-RUN echo "display_errors = On" >> /usr/local/etc/php/php.ini \
-    && echo "error_reporting = E_ALL" >> /usr/local/etc/php/php.ini \
-    && echo "log_errors = On" >> /usr/local/etc/php/php.ini \
-    && echo "memory_limit = 512M" >> /usr/local/etc/php/php.ini \
-    && echo "max_execution_time = 300" >> /usr/local/etc/php/php.ini
-
-# Script de inicialização para desenvolvimento
+# Copiar script de desenvolvimento
 COPY docker/start-dev.sh /usr/local/bin/start-dev.sh
 RUN chmod +x /usr/local/bin/start-dev.sh
 
-# Expor portas para desenvolvimento
-EXPOSE 8000 5173
+# Criar diretórios necessários
+RUN mkdir -p /var/log/supervisor \
+    && mkdir -p /run/nginx
+
+# Expor portas
+EXPOSE 80 8000 5173
 
 # Comando de inicialização para desenvolvimento
 CMD ["/usr/local/bin/start-dev.sh"]

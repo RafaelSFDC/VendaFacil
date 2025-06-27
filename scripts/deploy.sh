@@ -38,11 +38,11 @@ npm run format
 
 # Build local para testar
 echo "🏗️ Testando build local..."
-docker build -t venda-facil:test .
+docker build -t vendafacil:test .
 
 # Testar se a imagem funciona
 echo "🧪 Testando container..."
-docker run --rm -d --name venda-facil-test -p 8081:80 venda-facil:test
+docker run --rm -d --name vendafacil-test -p 8081:80 vendafacil:test
 
 # Aguardar o container inicializar
 sleep 10
@@ -52,23 +52,29 @@ if curl -f http://localhost:8081/up > /dev/null 2>&1; then
     echo "✅ Health check passou!"
 else
     echo "❌ Health check falhou!"
-    docker logs venda-facil-test
-    docker stop venda-facil-test
+    docker logs vendafacil-test
+    docker stop vendafacil-test
     exit 1
 fi
 
 # Parar container de teste
-docker stop venda-facil-test
+docker stop vendafacil-test
 
-# Verificar se há mudanças não commitadas
-if [ -n "$(git status --porcelain)" ]; then
-    echo "📝 Commitando mudanças..."
-    git add .
-    git commit -m "Deploy: Preparação para produção
+# Limpar imagem de teste
+docker rmi vendafacil:test
 
-- Verificações de qualidade executadas
-- Build testado localmente
-- Health check validado"
+# Adicionar mudanças ao Git
+echo "📝 Adicionando mudanças ao Git..."
+git add .
+
+# Verificar se há mudanças para commit
+if git diff --staged --quiet; then
+    echo "ℹ️ Nenhuma mudança para commit"
+else
+    # Commit das mudanças
+    echo "💾 Fazendo commit das mudanças..."
+    read -p "Digite a mensagem do commit: " commit_message
+    git commit -m "$commit_message"
 fi
 
 # Push para o repositório

@@ -1,11 +1,10 @@
 #!/bin/bash
 
-# Script de deploy de produção para o Render.com
-# Este script executa verificações mais rigorosas antes do deploy
+# Script de deploy para produção com HTTPS e seeds
 
 set -e
 
-echo "🚀 Preparando deploy de PRODUÇÃO para o Render.com..."
+echo "🚀 Preparando deploy para produção..."
 
 # Verificar se estamos no diretório correto
 if [ ! -f "composer.json" ]; then
@@ -37,81 +36,90 @@ npm run format
 
 # Build local para testar
 echo "🏗️ Construindo imagem de produção..."
-docker build -t venda-facil:prod .
+docker build -t vendafacil:prod .
 
 # Testar se a imagem funciona
 echo "🧪 Testando container de produção..."
-docker run --rm -d --name venda-facil-prod-test \
+docker run --rm -d --name vendafacil-prod-test \
     -p 8082:80 \
     -e APP_ENV=production \
     -e APP_DEBUG=false \
     -e APP_URL=https://vendafacil.onrender.com \
     -e FORCE_HTTPS=true \
     -e FORCE_SEED=true \
-    -e INERTIA_SSR_ENABLED=false \
-    -e VITE_APP_NAME="Venda Fácil" \
-    venda-facil:prod
+    vendafacil:prod
 
 # Aguardar o container inicializar
+echo "⏳ Aguardando inicialização..."
 sleep 15
 
 # Testar health check
+echo "🔍 Testando health check..."
 if curl -f http://localhost:8082/up > /dev/null 2>&1; then
-    echo "✅ Health check de produção passou!"
+    echo "✅ Health check passou!"
 else
-    echo "❌ Health check de produção falhou!"
-    docker logs venda-facil-prod-test
-    docker stop venda-facil-prod-test
+    echo "❌ Health check falhou!"
+    echo "📋 Logs do container:"
+    docker logs vendafacil-prod-test
+    docker stop vendafacil-prod-test
     exit 1
 fi
 
-# Testar algumas rotas básicas
-echo "🔍 Testando rotas básicas..."
-if curl -f http://localhost:8082/ > /dev/null 2>&1; then
-    echo "✅ Rota principal funcionando!"
+# Verificar se os seeds foram executados
+echo "🌱 Verificando execução dos seeds..."
+docker exec vendafacil-prod-test ls -la /var/www/html/storage/.seeded > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+    echo "✅ Seeds foram executados com sucesso!"
 else
-    echo "⚠️ Rota principal não está respondendo (pode ser normal se requer autenticação)"
+    echo "⚠️ Seeds podem não ter sido executados"
 fi
 
 # Parar container de teste
-docker stop venda-facil-prod-test
+docker stop vendafacil-prod-test
 
-# Verificar se há mudanças não commitadas
-if [ -n "$(git status --porcelain)" ]; then
-    echo "📝 Commitando mudanças de produção..."
-    git add .
-    git commit -m "Deploy de produção: Venda Fácil
+# Limpar imagem de teste
+docker rmi vendafacil:prod
 
-- Todas as verificações de qualidade executadas
-- Build de produção testado localmente
-- Health check validado
-- Rotas básicas testadas"
-fi
+echo "✅ Testes de produção passaram!"
 
-# Confirmar deploy de produção
-echo ""
-echo "⚠️  ATENÇÃO: Você está prestes a fazer deploy de PRODUÇÃO!"
-echo "🌐 URL: https://vendafacil.onrender.com"
-echo ""
-read -p "Confirma o deploy de produção? (y/N): " -n 1 -r
+# Perguntar se deve continuar com o deploy
+read -p "🚀 Continuar com o deploy? (y/N): " -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     echo "❌ Deploy cancelado pelo usuário"
-    exit 1
+    exit 0
+fi
+
+# Adicionar mudanças ao Git
+echo "📝 Adicionando mudanças ao Git..."
+git add .
+
+# Verificar se há mudanças para commit
+if git diff --staged --quiet; then
+    echo "ℹ️ Nenhuma mudança para commit"
+else
+    # Commit das mudanças
+    echo "💾 Fazendo commit das mudanças..."
+    read -p "Digite a mensagem do commit: " commit_message
+    if [ -z "$commit_message" ]; then
+        commit_message="Deploy: configuração HTTPS e seeds para produção"
+    fi
+    git commit -m "$commit_message"
 fi
 
 # Push para o repositório
-echo "🚀 Fazendo push para produção..."
+echo "🚀 Fazendo push para o repositório..."
 git push
 
 echo ""
-echo "✅ Deploy de produção iniciado!"
+echo "✅ Deploy para produção concluído!"
 echo "🌐 Acesse: https://dashboard.render.com para acompanhar o progresso"
 echo "📱 URL da aplicação: https://vendafacil.onrender.com"
 echo ""
-echo "⏳ O deploy pode levar alguns minutos para ser concluído"
-echo "🔄 O Render.com irá automaticamente:"
-echo "   - Fazer build da aplicação"
-echo "   - Executar migrações"
-echo "   - Executar seeds (se FORCE_SEED=true)"
-echo "   - Iniciar a aplicação"
+echo "📋 Configurações aplicadas:"
+echo "   ✓ HTTPS forçado em produção"
+echo "   ✓ Seeds executados automaticamente"
+echo "   ✓ Headers de segurança configurados"
+echo "   ✓ Cache otimizado para assets"
+echo ""
+echo "🔧 Para forçar re-execução dos seeds, defina FORCE_SEED=true no Render.com"

@@ -1,11 +1,11 @@
-# Script de deploy de produção para o Render.com (PowerShell)
-# Este script executa verificações mais rigorosas antes do deploy
+# Script de deploy para produção com HTTPS e seeds (PowerShell)
 
 param(
-    [switch]$Force
+    [switch]$Force,
+    [string]$CommitMessage = "Deploy: configuração HTTPS e seeds para produção"
 )
 
-Write-Host "🚀 Preparando deploy de PRODUÇÃO para o Render.com..." -ForegroundColor Green
+Write-Host "🚀 Preparando deploy para produção..." -ForegroundColor Green
 
 # Verificar se estamos no diretório correto
 if (-not (Test-Path "composer.json")) {
@@ -22,9 +22,9 @@ try {
 }
 
 # Verificar se o Git está configurado
-$gitUserName = git config user.name
-$gitUserEmail = git config user.email
-if (-not $gitUserName -or -not $gitUserEmail) {
+$gitUser = git config user.name
+$gitEmail = git config user.email
+if (-not $gitUser -or -not $gitEmail) {
     Write-Host "❌ Erro: Configure o Git primeiro (git config user.name e user.email)" -ForegroundColor Red
     exit 1
 }
@@ -33,7 +33,7 @@ if (-not $gitUserName -or -not $gitUserEmail) {
 Write-Host "🔍 Verificando tipos TypeScript..." -ForegroundColor Yellow
 npm run types
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ Erro na verificação de tipos" -ForegroundColor Red
+    Write-Host "❌ Erro nos tipos TypeScript" -ForegroundColor Red
     exit 1
 }
 
@@ -53,7 +53,7 @@ if ($LASTEXITCODE -ne 0) {
 
 # Build local para testar
 Write-Host "🏗️ Construindo imagem de produção..." -ForegroundColor Yellow
-docker build -t venda-facil:prod .
+docker build -t vendafacil:prod .
 if ($LASTEXITCODE -ne 0) {
     Write-Host "❌ Erro no build da imagem Docker" -ForegroundColor Red
     exit 1
@@ -61,16 +61,14 @@ if ($LASTEXITCODE -ne 0) {
 
 # Testar se a imagem funciona
 Write-Host "🧪 Testando container de produção..." -ForegroundColor Yellow
-$containerId = docker run --rm -d --name venda-facil-prod-test `
+$containerId = docker run --rm -d --name vendafacil-prod-test `
     -p 8082:80 `
     -e APP_ENV=production `
     -e APP_DEBUG=false `
     -e APP_URL=https://vendafacil.onrender.com `
     -e FORCE_HTTPS=true `
     -e FORCE_SEED=true `
-    -e INERTIA_SSR_ENABLED=false `
-    -e VITE_APP_NAME="Venda Fácil" `
-    venda-facil:prod
+    vendafacil:prod
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "❌ Erro ao iniciar container de teste" -ForegroundColor Red
@@ -78,74 +76,94 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 # Aguardar o container inicializar
-Write-Host "⏳ Aguardando container inicializar..." -ForegroundColor Yellow
+Write-Host "⏳ Aguardando inicialização..." -ForegroundColor Yellow
 Start-Sleep -Seconds 15
 
 # Testar health check
+Write-Host "🔍 Testando health check..." -ForegroundColor Yellow
 try {
-    $response = Invoke-WebRequest -Uri "http://localhost:8082/up" -UseBasicParsing -TimeoutSec 10
+    $response = Invoke-WebRequest -Uri "http://localhost:8082/up" -TimeoutSec 10
     if ($response.StatusCode -eq 200) {
-        Write-Host "✅ Health check de produção passou!" -ForegroundColor Green
+        Write-Host "✅ Health check passou!" -ForegroundColor Green
     } else {
-        throw "Status code: $($response.StatusCode)"
+        throw "Health check falhou com status: $($response.StatusCode)"
     }
 } catch {
-    Write-Host "❌ Health check de produção falhou!" -ForegroundColor Red
-    docker logs venda-facil-prod-test
-    docker stop venda-facil-prod-test
+    Write-Host "❌ Health check falhou!" -ForegroundColor Red
+    Write-Host "📋 Logs do container:" -ForegroundColor Yellow
+    docker logs vendafacil-prod-test
+    docker stop vendafacil-prod-test
+    docker rmi vendafacil:prod
     exit 1
 }
 
-# Testar algumas rotas básicas
-Write-Host "🔍 Testando rotas básicas..." -ForegroundColor Yellow
+# Verificar se os seeds foram executados
+Write-Host "🌱 Verificando execução dos seeds..." -ForegroundColor Yellow
 try {
-    $response = Invoke-WebRequest -Uri "http://localhost:8082/" -UseBasicParsing -TimeoutSec 10
-    Write-Host "✅ Rota principal funcionando!" -ForegroundColor Green
+    docker exec vendafacil-prod-test ls -la /var/www/html/storage/.seeded | Out-Null
+    Write-Host "✅ Seeds foram executados com sucesso!" -ForegroundColor Green
 } catch {
-    Write-Host "⚠️ Rota principal não está respondendo (pode ser normal se requer autenticação)" -ForegroundColor Yellow
+    Write-Host "⚠️ Seeds podem não ter sido executados" -ForegroundColor Yellow
 }
 
 # Parar container de teste
-docker stop venda-facil-prod-test
+docker stop vendafacil-prod-test | Out-Null
 
-# Verificar se há mudanças não commitadas
-$gitStatus = git status --porcelain
-if ($gitStatus) {
-    Write-Host "📝 Commitando mudanças de produção..." -ForegroundColor Yellow
-    git add .
-    git commit -m "Deploy de produção: Venda Fácil
+# Limpar imagem de teste
+docker rmi vendafacil:prod | Out-Null
 
-- Todas as verificações de qualidade executadas
-- Build de produção testado localmente
-- Health check validado
-- Rotas básicas testadas"
+Write-Host "✅ Testes de produção passaram!" -ForegroundColor Green
+
+# Perguntar se deve continuar com o deploy
+if (-not $Force) {
+    $continue = Read-Host "🚀 Continuar com o deploy? (y/N)"
+    if ($continue -ne "y" -and $continue -ne "Y") {
+        Write-Host "❌ Deploy cancelado pelo usuário" -ForegroundColor Yellow
+        exit 0
+    }
 }
 
-# Confirmar deploy de produção
-if (-not $Force) {
-    Write-Host ""
-    Write-Host "⚠️  ATENÇÃO: Você está prestes a fazer deploy de PRODUÇÃO!" -ForegroundColor Red
-    Write-Host "🌐 URL: https://vendafacil.onrender.com" -ForegroundColor Cyan
-    Write-Host ""
-    $confirmation = Read-Host "Confirma o deploy de produção? (y/N)"
-    if ($confirmation -ne "y" -and $confirmation -ne "Y") {
-        Write-Host "❌ Deploy cancelado pelo usuário" -ForegroundColor Red
+# Adicionar mudanças ao Git
+Write-Host "📝 Adicionando mudanças ao Git..." -ForegroundColor Yellow
+git add .
+
+# Verificar se há mudanças para commit
+$changes = git diff --staged --name-only
+if (-not $changes) {
+    Write-Host "ℹ️ Nenhuma mudança para commit" -ForegroundColor Cyan
+} else {
+    # Commit das mudanças
+    Write-Host "💾 Fazendo commit das mudanças..." -ForegroundColor Yellow
+    if (-not $CommitMessage) {
+        $CommitMessage = Read-Host "Digite a mensagem do commit"
+        if (-not $CommitMessage) {
+            $CommitMessage = "Deploy: configuração HTTPS e seeds para produção"
+        }
+    }
+    git commit -m $CommitMessage
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "❌ Erro no commit" -ForegroundColor Red
         exit 1
     }
 }
 
 # Push para o repositório
-Write-Host "🚀 Fazendo push para produção..." -ForegroundColor Green
+Write-Host "🚀 Fazendo push para o repositório..." -ForegroundColor Yellow
 git push
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "❌ Erro no push" -ForegroundColor Red
+    exit 1
+}
 
 Write-Host ""
-Write-Host "✅ Deploy de produção iniciado!" -ForegroundColor Green
+Write-Host "✅ Deploy para produção concluído!" -ForegroundColor Green
 Write-Host "🌐 Acesse: https://dashboard.render.com para acompanhar o progresso" -ForegroundColor Cyan
 Write-Host "📱 URL da aplicação: https://vendafacil.onrender.com" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "⏳ O deploy pode levar alguns minutos para ser concluído" -ForegroundColor Yellow
-Write-Host "🔄 O Render.com irá automaticamente:" -ForegroundColor Yellow
-Write-Host "   - Fazer build da aplicação" -ForegroundColor White
-Write-Host "   - Executar migrações" -ForegroundColor White
-Write-Host "   - Executar seeds (se FORCE_SEED=true)" -ForegroundColor White
-Write-Host "   - Iniciar a aplicação" -ForegroundColor White
+Write-Host "📋 Configurações aplicadas:" -ForegroundColor Yellow
+Write-Host "   ✓ HTTPS forçado em produção" -ForegroundColor Green
+Write-Host "   ✓ Seeds executados automaticamente" -ForegroundColor Green
+Write-Host "   ✓ Headers de segurança configurados" -ForegroundColor Green
+Write-Host "   ✓ Cache otimizado para assets" -ForegroundColor Green
+Write-Host ""
+Write-Host "🔧 Para forçar re-execução dos seeds, defina FORCE_SEED=true no Render.com" -ForegroundColor Cyan

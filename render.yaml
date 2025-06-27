@@ -5,11 +5,6 @@ services:
     plan: starter
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    dockerBuildArgs:
-      - name: BUILDKIT_INLINE_CACHE
-        value: "1"
-    dockerCommand: ""
-    dockerTarget: production
     envVars:
       - key: APP_ENV
         value: production
@@ -41,10 +36,6 @@ services:
         value: true
       - key: FORCE_SEED
         value: false
-      - key: INERTIA_SSR_ENABLED
-        value: false
-      - key: VITE_APP_NAME
-        value: Venda Fácil
     healthCheckPath: /up
     autoDeploy: true
     buildFilter:
@@ -52,26 +43,16 @@ services:
         - app/**
         - resources/**
         - public/**
+        - config/**
         - database/**
         - routes/**
-        - config/**
-        - bootstrap/**
         - composer.json
         - composer.lock
         - package.json
         - package-lock.json
-        - vite.config.ts
-        - tsconfig.json
         - Dockerfile
         - docker/**
       ignoredPaths:
-        - node_modules/**
-        - vendor/**
-        - storage/logs/**
-        - storage/framework/cache/**
-        - storage/framework/sessions/**
-        - storage/framework/views/**
-        - .git/**
         - tests/**
-        - .env*
+        - .github/**
         - README.md

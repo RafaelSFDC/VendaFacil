@@ -4,7 +4,7 @@
 
 set -e
 
-echo "🚀 Iniciando aplicação Venda Fácil em modo desenvolvimento..."
+echo "🚀 Iniciando aplicação Laravel em modo desenvolvimento..."
 
 # Instalar dependências se não existirem
 if [ ! -d "vendor" ]; then
@@ -29,7 +29,8 @@ if ! grep -q "APP_KEY=base64:" .env; then
     php artisan key:generate
 fi
 
-# Criar diretório do banco de dados se não existir
+# Criar banco de dados se não existir
+mkdir -p database
 if [ ! -f database/database.sqlite ]; then
     echo "🗄️ Criando banco de dados SQLite..."
     touch database/database.sqlite
@@ -39,27 +40,23 @@ fi
 echo "🔄 Executando migrações..."
 php artisan migrate
 
-# Executar seeds
-echo "🌱 Executando seeds..."
-php artisan db:seed
+# Criar link simbólico para storage
+if [ ! -L public/storage ]; then
+    echo "🔗 Criando link simbólico para storage..."
+    php artisan storage:link
+fi
 
-# Criar links simbólicos para storage
-echo "🔗 Criando links simbólicos..."
-php artisan storage:link
+# Ajustar permissões
+chown -R www-data:www-data storage bootstrap/cache
+chmod -R 775 storage bootstrap/cache
 
-# Limpar caches de desenvolvimento
-echo "🧹 Limpando caches..."
-php artisan config:clear
-php artisan route:clear
-php artisan view:clear
+echo "✅ Aplicação de desenvolvimento inicializada!"
 
-# Iniciar servidor Laravel em background
-echo "🎯 Iniciando servidor Laravel..."
+# Iniciar servidor de desenvolvimento Laravel em background
 php artisan serve --host=0.0.0.0 --port=8000 &
 
-# Iniciar Vite em background
-echo "⚡ Iniciando Vite..."
+# Iniciar Vite dev server em background
 npm run dev -- --host 0.0.0.0 --port 5173 &
 
-# Aguardar processos
-wait
+# Manter o container rodando
+tail -f /dev/null
