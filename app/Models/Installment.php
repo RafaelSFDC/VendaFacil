@@ -15,6 +15,7 @@ class Installment extends Model
         'data_pagamento',
         'status',
         'observacoes',
+        'observacoes_pagamento',
         'recibo',
     ];
 

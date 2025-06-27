@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\InstallmentController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SaleController;
 use Illuminate\Support\Facades\Route;
@@ -16,6 +17,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('customers', CustomerController::class);
     Route::resource('products', ProductController::class);
     Route::resource('sales', SaleController::class);
+
+    // Rotas para parcelas
+    Route::get('installments', [InstallmentController::class, 'index'])->name('installments.index');
+    Route::get('installments/{installment}', [InstallmentController::class, 'show'])->name('installments.show');
+    Route::put('installments/{installment}', [InstallmentController::class, 'update'])->name('installments.update');
+    Route::delete('installments/{installment}', [InstallmentController::class, 'destroy'])->name('installments.destroy');
+    Route::post('installments/{installment}/mark-as-paid', [InstallmentController::class, 'markAsPaid'])->name('installments.mark-as-paid');
+    Route::post('installments/mark-as-overdue', [InstallmentController::class, 'markAsOverdue'])->name('installments.mark-as-overdue');
 });
 
 require __DIR__.'/settings.php';
