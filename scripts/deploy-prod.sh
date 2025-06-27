@@ -45,7 +45,7 @@ docker run --rm -d --name venda-facil-prod-test \
     -p 8082:80 \
     -e APP_ENV=production \
     -e APP_DEBUG=false \
-    -e APP_URL=https://venda-facil.onrender.com \
+    -e APP_URL=https://vendafacil.onrender.com \
     -e FORCE_HTTPS=true \
     -e FORCE_SEED=true \
     venda-facil:prod
@@ -89,7 +89,7 @@ fi
 # Confirmar deploy de produção
 echo ""
 echo "⚠️  ATENÇÃO: Você está prestes a fazer deploy de PRODUÇÃO!"
-echo "🌐 URL: https://venda-facil.onrender.com"
+echo "🌐 URL: https://vendafacil.onrender.com"
 echo ""
 read -p "Confirma o deploy de produção? (y/N): " -n 1 -r
 echo
@@ -105,7 +105,7 @@ git push
 echo ""
 echo "✅ Deploy de produção iniciado!"
 echo "🌐 Acesse: https://dashboard.render.com para acompanhar o progresso"
-echo "📱 URL da aplicação: https://venda-facil.onrender.com"
+echo "📱 URL da aplicação: https://vendafacil.onrender.com"
 echo ""
 echo "⏳ O deploy pode levar alguns minutos para ser concluído"
 echo "🔄 O Render.com irá automaticamente:"

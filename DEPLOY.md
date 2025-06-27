@@ -48,7 +48,7 @@ Guia completo para deploy da aplicação Venda Fácil no Render.com.
 APP_ENV=production
 APP_DEBUG=false
 APP_KEY=base64:... (gerado automaticamente)
-APP_URL=https://seu-app.onrender.com
+APP_URL=https://vendafacil.onrender.com
 DB_CONNECTION=sqlite
 DB_DATABASE=/var/www/html/database/database.sqlite
 ```

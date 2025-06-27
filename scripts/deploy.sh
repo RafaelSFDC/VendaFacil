@@ -77,7 +77,7 @@ git push
 
 echo "✅ Deploy preparado! O Render.com irá automaticamente fazer o deploy da nova versão."
 echo "🌐 Acesse: https://dashboard.render.com para acompanhar o progresso"
-echo "📱 URL da aplicação: https://venda-facil.onrender.com"
+echo "📱 URL da aplicação: https://vendafacil.onrender.com"
 echo ""
 echo "🌱 Seeds serão executados automaticamente no primeiro deploy"
 echo "🔧 Para forçar re-execução dos seeds, defina FORCE_SEED=true no Render.com"

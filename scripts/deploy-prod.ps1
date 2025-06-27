@@ -65,7 +65,7 @@ $containerId = docker run --rm -d --name venda-facil-prod-test `
     -p 8082:80 `
     -e APP_ENV=production `
     -e APP_DEBUG=false `
-    -e APP_URL=https://venda-facil.onrender.com `
+    -e APP_URL=https://vendafacil.onrender.com `
     -e FORCE_HTTPS=true `
     -e FORCE_SEED=true `
     venda-facil:prod
@@ -123,7 +123,7 @@ if ($gitStatus) {
 if (-not $Force) {
     Write-Host ""
     Write-Host "⚠️  ATENÇÃO: Você está prestes a fazer deploy de PRODUÇÃO!" -ForegroundColor Red
-    Write-Host "🌐 URL: https://venda-facil.onrender.com" -ForegroundColor Cyan
+    Write-Host "🌐 URL: https://vendafacil.onrender.com" -ForegroundColor Cyan
     Write-Host ""
     $confirmation = Read-Host "Confirma o deploy de produção? (y/N)"
     if ($confirmation -ne "y" -and $confirmation -ne "Y") {
@@ -139,7 +139,7 @@ git push
 Write-Host ""
 Write-Host "✅ Deploy de produção iniciado!" -ForegroundColor Green
 Write-Host "🌐 Acesse: https://dashboard.render.com para acompanhar o progresso" -ForegroundColor Cyan
-Write-Host "📱 URL da aplicação: https://venda-facil.onrender.com" -ForegroundColor Cyan
+Write-Host "📱 URL da aplicação: https://vendafacil.onrender.com" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "⏳ O deploy pode levar alguns minutos para ser concluído" -ForegroundColor Yellow
 Write-Host "🔄 O Render.com irá automaticamente:" -ForegroundColor Yellow
