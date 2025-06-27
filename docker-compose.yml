@@ -36,8 +36,7 @@ services:
   dev:
     build:
       context: .
-      dockerfile: Dockerfile
-      target: development
+      dockerfile: Dockerfile.dev
     ports:
       - "8000:8000"
       - "5173:5173"
