@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
@@ -53,16 +54,14 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
         router.get('/customers', { search }, { preserveState: true });
     };
 
-    const handleDelete = (customer: Customer) => {
-        if (confirm(`Tem certeza que deseja excluir o cliente ${customer.nome}?`)) {
-            router.delete(`/customers/${customer.id}`);
-        }
+    const handleDelete = (customerId: number) => {
+        router.delete(`/customers/${customerId}`);
     };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Clientes - Venda Fácil" />
-            
+
             <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
@@ -108,8 +107,8 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                             </div>
                             <Button type="submit">Buscar</Button>
                             {filters.search && (
-                                <Button 
-                                    type="button" 
+                                <Button
+                                    type="button"
                                     variant="outline"
                                     onClick={() => {
                                         setSearch('');
@@ -161,7 +160,7 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                                                     {customer.cpf_cnpj || '-'}
                                                 </TableCell>
                                                 <TableCell>
-                                                    {customer.cidade && customer.estado 
+                                                    {customer.cidade && customer.estado
                                                         ? `${customer.cidade}/${customer.estado}`
                                                         : customer.cidade || '-'
                                                     }
@@ -181,13 +180,27 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                                                                 <Edit className="h-4 w-4" />
                                                             </Link>
                                                         </Button>
-                                                        <Button 
-                                                            size="sm" 
-                                                            variant="outline"
-                                                            onClick={() => handleDelete(customer)}
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                                <Button size="sm" variant="outline">
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>Excluir cliente</AlertDialogTitle>
+                                                                    <AlertDialogDescription>
+                                                                        Tem certeza que deseja excluir o cliente {customer.nome}? Esta ação não pode ser desfeita.
+                                                                    </AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                    <AlertDialogAction onClick={() => handleDelete(customer.id)} className="bg-red-600 hover:bg-red-700">
+                                                                        Excluir
+                                                                    </AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
@@ -198,7 +211,7 @@ export default function CustomersIndex({ customers, filters }: CustomersIndexPro
                         ) : (
                             <div className="text-center py-8">
                                 <p className="text-muted-foreground">
-                                    {filters.search 
+                                    {filters.search
                                         ? 'Nenhum cliente encontrado com os critérios de busca.'
                                         : 'Nenhum cliente cadastrado ainda.'
                                     }

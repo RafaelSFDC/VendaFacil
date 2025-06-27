@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/react';
@@ -55,7 +56,7 @@ interface InstallmentsShowProps {
 
 export default function InstallmentsShow({ installment }: InstallmentsShowProps) {
     const [showPaymentForm, setShowPaymentForm] = useState(false);
-    
+
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: 'Dashboard',
@@ -93,9 +94,7 @@ export default function InstallmentsShow({ installment }: InstallmentsShowProps)
     };
 
     const handleDelete = () => {
-        if (confirm(`Tem certeza que deseja excluir a parcela #${installment.numero_parcela}?`)) {
-            router.delete(`/installments/${installment.id}`);
-        }
+        router.delete(`/installments/${installment.id}`);
     };
 
     const getStatusColor = (status: string) => {
@@ -112,14 +111,14 @@ export default function InstallmentsShow({ installment }: InstallmentsShowProps)
     };
 
     const isOverdue = () => {
-        return installment.status === 'pendente' && 
+        return installment.status === 'pendente' &&
                new Date(installment.data_vencimento) < new Date();
     };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Parcela #${installment.numero_parcela} - Venda Fácil`} />
-            
+
             <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
@@ -143,10 +142,28 @@ export default function InstallmentsShow({ installment }: InstallmentsShowProps)
                                 Marcar como Pago
                             </Button>
                         )}
-                        <Button variant="outline" onClick={handleDelete}>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Excluir
-                        </Button>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="outline">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Excluir
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir parcela</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Tem certeza que deseja excluir a parcela #{installment.numero_parcela}? Esta ação não pode ser desfeita.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+                                        Excluir
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </div>
                 </div>
 
@@ -215,7 +232,7 @@ export default function InstallmentsShow({ installment }: InstallmentsShowProps)
                         <CardContent className="space-y-4">
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">Venda</p>
-                                <Link 
+                                <Link
                                     href={`/sales/${installment.sale.id}`}
                                     className="text-lg font-semibold text-blue-600 hover:underline"
                                 >
@@ -225,7 +242,7 @@ export default function InstallmentsShow({ installment }: InstallmentsShowProps)
 
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">Cliente</p>
-                                <Link 
+                                <Link
                                     href={`/customers/${installment.sale.customer.id}`}
                                     className="text-lg font-semibold text-blue-600 hover:underline"
                                 >
@@ -350,7 +367,7 @@ export default function InstallmentsShow({ installment }: InstallmentsShowProps)
                                     {installment.sale.items.map((item) => (
                                         <TableRow key={item.id}>
                                             <TableCell>
-                                                <Link 
+                                                <Link
                                                     href={`/products/${item.product.id}`}
                                                     className="text-blue-600 hover:underline"
                                                 >

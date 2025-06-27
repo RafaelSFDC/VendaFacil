@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
@@ -77,9 +78,7 @@ export default function SalesShow({ sale }: SalesShowProps) {
     };
 
     const handleDelete = () => {
-        if (confirm(`Tem certeza que deseja excluir a venda #${sale.id}?`)) {
-            router.delete(`/sales/${sale.id}`);
-        }
+        router.delete(`/sales/${sale.id}`);
     };
 
     const getStatusColor = (status: string) => {
@@ -111,7 +110,7 @@ export default function SalesShow({ sale }: SalesShowProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Venda #${sale.id} - Venda Fácil`} />
-            
+
             <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
@@ -134,10 +133,28 @@ export default function SalesShow({ sale }: SalesShowProps) {
                                 Editar
                             </Link>
                         </Button>
-                        <Button variant="outline" onClick={handleDelete}>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Excluir
-                        </Button>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="outline">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Excluir
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir venda</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Tem certeza que deseja excluir a venda #{sale.id}? Esta ação não pode ser desfeita.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+                                        Excluir
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </div>
                 </div>
 
@@ -213,7 +230,7 @@ export default function SalesShow({ sale }: SalesShowProps) {
                         <CardContent className="space-y-4">
                             <div>
                                 <p className="text-sm font-medium text-muted-foreground">Nome</p>
-                                <Link 
+                                <Link
                                     href={`/customers/${sale.customer.id}`}
                                     className="text-lg font-semibold text-blue-600 hover:underline"
                                 >
@@ -261,7 +278,7 @@ export default function SalesShow({ sale }: SalesShowProps) {
                                     {sale.items.map((item) => (
                                         <TableRow key={item.id}>
                                             <TableCell>
-                                                <Link 
+                                                <Link
                                                     href={`/products/${item.product.id}`}
                                                     className="text-blue-600 hover:underline"
                                                 >
@@ -318,7 +335,7 @@ export default function SalesShow({ sale }: SalesShowProps) {
                                                     {new Date(installment.data_vencimento).toLocaleDateString('pt-BR')}
                                                 </TableCell>
                                                 <TableCell>
-                                                    {installment.data_pagamento 
+                                                    {installment.data_pagamento
                                                         ? new Date(installment.data_pagamento).toLocaleDateString('pt-BR')
                                                         : '-'
                                                     }

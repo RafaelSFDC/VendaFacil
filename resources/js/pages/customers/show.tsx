@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
@@ -78,9 +79,7 @@ export default function CustomersShow({ customer }: CustomersShowProps) {
     };
 
     const handleDelete = () => {
-        if (confirm(`Tem certeza que deseja excluir o cliente ${customer.nome}?`)) {
-            router.delete(`/customers/${customer.id}`);
-        }
+        router.delete(`/customers/${customer.id}`);
     };
 
     const totalVendas = customer.sales?.reduce((sum, sale) => sum + sale.valor_final, 0) || 0;
@@ -88,7 +87,7 @@ export default function CustomersShow({ customer }: CustomersShowProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`${customer.nome} - Venda Fácil`} />
-            
+
             <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
@@ -111,10 +110,28 @@ export default function CustomersShow({ customer }: CustomersShowProps) {
                                 Editar
                             </Link>
                         </Button>
-                        <Button variant="outline" onClick={handleDelete}>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Excluir
-                        </Button>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="outline">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Excluir
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir cliente</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Tem certeza que deseja excluir o cliente {customer.nome}? Esta ação não pode ser desfeita.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
+                                        Excluir
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </div>
                 </div>
 
@@ -242,8 +259,8 @@ export default function CustomersShow({ customer }: CustomersShowProps) {
                                                 </TableCell>
                                                 <TableCell>
                                                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                                        sale.status === 'pago' 
-                                                            ? 'bg-green-100 text-green-800' 
+                                                        sale.status === 'pago'
+                                                            ? 'bg-green-100 text-green-800'
                                                             : sale.status === 'pendente'
                                                             ? 'bg-yellow-100 text-yellow-800'
                                                             : 'bg-red-100 text-red-800'

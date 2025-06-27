@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
@@ -102,9 +103,7 @@ export default function InstallmentsIndex({ installments, stats, filters }: Inst
     };
 
     const markAsOverdue = () => {
-        if (confirm('Tem certeza que deseja marcar todas as parcelas vencidas?')) {
-            router.post('/installments/mark-as-overdue');
-        }
+        router.post('/installments/mark-as-overdue');
     };
 
     const getStatusColor = (status: string) => {
@@ -153,10 +152,28 @@ export default function InstallmentsIndex({ installments, stats, filters }: Inst
                             Controle de pagamentos e vencimentos
                         </p>
                     </div>
-                    <Button onClick={markAsOverdue} variant="outline">
-                        <AlertTriangle className="mr-2 h-4 w-4" />
-                        Marcar Vencidas
-                    </Button>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="outline">
+                                <AlertTriangle className="mr-2 h-4 w-4" />
+                                Marcar Vencidas
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Marcar parcelas como vencidas</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Tem certeza que deseja marcar todas as parcelas vencidas? Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={markAsOverdue}>
+                                    Confirmar
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </div>
 
                 {/* Flash Messages */}
