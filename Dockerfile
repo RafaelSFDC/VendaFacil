@@ -85,25 +85,27 @@ RUN mkdir -p /var/www/html/database \
     && chown -R www-data:www-data /var/www/html/database \
     && chmod -R 755 /var/www/html/database
 
-# Configurar Nginx
+# Copiar configurações do Nginx
 COPY docker/nginx.conf /etc/nginx/nginx.conf
-COPY docker/default.conf /etc/nginx/http.d/default.conf
+COPY docker/default-https.conf /etc/nginx/http.d/default.conf
 
-# Configurar PHP-FPM
-COPY docker/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
-COPY docker/php.ini /usr/local/etc/php/php.ini
-
-# Configurar Supervisor
+# Copiar configuração do Supervisor
 COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-# Script de inicialização
+# Copiar script de inicialização
 COPY docker/start.sh /usr/local/bin/start.sh
 RUN chmod +x /usr/local/bin/start.sh
 
-# Executar comandos Laravel
-RUN php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache
+# Configurar PHP para produção
+COPY docker/php.ini /usr/local/etc/php/conf.d/99-custom.ini
+
+# Criar diretórios necessários
+RUN mkdir -p /var/log/supervisor \
+    && mkdir -p /run/nginx \
+    && mkdir -p /var/www/html/storage/logs \
+    && mkdir -p /var/www/html/storage/framework/cache \
+    && mkdir -p /var/www/html/storage/framework/sessions \
+    && mkdir -p /var/www/html/storage/framework/views
 
 # Remover dependências de desenvolvimento do Composer
 RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist

@@ -1,74 +1,69 @@
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Vendor (será instalado no container)
+vendor/
+
+# Build artifacts
+/public/build
+/public/hot
+/public/storage
+
+# Storage
+/storage/*.key
+/storage/pail
+
+# Environment files
+.env
+.env.backup
+.env.production
+.env.local
+.env.*.local
+
+# IDE files
+/.fleet
+/.idea
+/.nova
+/.vscode
+/.zed
+.phpactor.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
 # Git
 .git
 .gitignore
 .gitattributes
 
+# Testing
+.phpunit.result.cache
+/tests/
+phpunit.xml
+
 # Documentation
 README.md
-DEPLOY.md
 *.md
 
-# Environment files
-.env*
-!.env.example
-
-# Dependencies
-node_modules
-vendor
-
-# Build artifacts
-public/build
-public/hot
-bootstrap/ssr
-
-# Storage and cache
-storage/app/*
-!storage/app/.gitignore
-!storage/app/public
-storage/framework/cache/*
-!storage/framework/cache/.gitignore
-storage/framework/sessions/*
-!storage/framework/sessions/.gitignore
-storage/framework/views/*
-!storage/framework/views/.gitignore
-storage/logs/*
-!storage/logs/.gitignore
-
-# Testing
-tests
-phpunit.xml
-.phpunit.result.cache
-
-# IDE
-.vscode
-.idea
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Temporary files
-*.tmp
-*.temp
-*.log
+# CI/CD
+.github/
 
 # Development tools
-.editorconfig
-.eslintrc*
-.prettierrc*
-eslint.config.js
-components.json
+Homestead.json
+Homestead.yaml
+/auth.json
 
-# Docker
-docker-compose.yml
-docker-compose.*.yml
+# Laravel specific
+/bootstrap/ssr
+/.phpunit.cache
+
+# Docker files (except the ones we need)
+docker-compose*.yml
 Dockerfile.dev
-
-# Scripts (except production ones)
-scripts/dev.sh
 scripts/deploy.sh
 
 # Database (will be created in container)
