@@ -22,4 +22,12 @@ export default defineConfig({
             'ziggy-js': resolve(__dirname, 'vendor/tightenco/ziggy'),
         },
     },
+    server: {
+        allowedHosts: [
+            'vendafacil.onrender.com',
+            'localhost',
+            '127.0.0.1',
+        ],
+        host: true,
+    },
 });
