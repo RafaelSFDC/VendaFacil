@@ -11,14 +11,14 @@ services:
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
-      - APP_URL=http://localhost:8080
+      - APP_URL=https://vendafacil.onrender.com
       - DB_CONNECTION=sqlite
       - DB_DATABASE=/var/www/html/database/database.sqlite
       - CACHE_STORE=file
       - SESSION_DRIVER=file
       - QUEUE_CONNECTION=database
-      - FORCE_HTTPS=false
-      - FORCE_SEED=true
+      - FORCE_HTTPS=true
+      - FORCE_SEED=false
       - INERTIA_SSR_ENABLED=false
       - VITE_APP_NAME=Venda Fácil
     volumes:

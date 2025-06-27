@@ -5,6 +5,11 @@ services:
     plan: starter
     dockerfilePath: ./Dockerfile
     dockerContext: .
+    dockerBuildArgs:
+      - name: BUILDKIT_INLINE_CACHE
+        value: "1"
+    dockerCommand: ""
+    dockerTarget: production
     envVars:
       - key: APP_ENV
         value: production
