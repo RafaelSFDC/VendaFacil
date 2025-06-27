@@ -48,6 +48,8 @@ docker run --rm -d --name venda-facil-prod-test \
     -e APP_URL=https://vendafacil.onrender.com \
     -e FORCE_HTTPS=true \
     -e FORCE_SEED=true \
+    -e INERTIA_SSR_ENABLED=false \
+    -e VITE_APP_NAME="Venda Fácil" \
     venda-facil:prod
 
 # Aguardar o container inicializar

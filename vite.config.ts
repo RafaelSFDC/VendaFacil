@@ -30,4 +30,14 @@ export default defineConfig({
         ],
         host: true,
     },
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    vendor: ['react', 'react-dom'],
+                    inertia: ['@inertiajs/react'],
+                },
+            },
+        },
+    },
 });

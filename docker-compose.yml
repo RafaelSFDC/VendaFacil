@@ -19,6 +19,8 @@ services:
       - QUEUE_CONNECTION=database
       - FORCE_HTTPS=false
       - FORCE_SEED=true
+      - INERTIA_SSR_ENABLED=false
+      - VITE_APP_NAME=Venda Fácil
     volumes:
       - ./storage:/var/www/html/storage
       - ./database:/var/www/html/database

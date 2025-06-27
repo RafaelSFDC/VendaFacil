@@ -18,6 +18,9 @@ RUN npm ci --omit=dev --silent
 COPY resources/ ./resources/
 COPY public/ ./public/
 
+# Definir variáveis de ambiente para o build
+ENV VITE_APP_NAME="Venda Fácil"
+
 # Build dos assets
 RUN npm run build
 

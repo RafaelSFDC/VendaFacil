@@ -36,6 +36,10 @@ services:
         value: true
       - key: FORCE_SEED
         value: false
+      - key: INERTIA_SSR_ENABLED
+        value: false
+      - key: VITE_APP_NAME
+        value: Venda Fácil
     healthCheckPath: /up
     autoDeploy: true
     buildFilter:

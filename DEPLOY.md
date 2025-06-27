@@ -51,6 +51,7 @@ APP_KEY=base64:... (gerado automaticamente)
 APP_URL=https://vendafacil.onrender.com
 DB_CONNECTION=sqlite
 DB_DATABASE=/var/www/html/database/database.sqlite
+VITE_APP_NAME=Venda Fácil
 ```
 
 #### Variáveis Opcionais:
@@ -61,6 +62,8 @@ SESSION_DRIVER=file
 QUEUE_CONNECTION=database
 LOG_CHANNEL=stderr
 LOG_LEVEL=info
+INERTIA_SSR_ENABLED=false # SSR desabilitado para produção
+FORCE_HTTPS=true          # Forçar HTTPS em produção
 ```
 
 ## 🐳 Deploy Manual com Docker
