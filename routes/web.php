@@ -32,6 +32,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('reports/sales', [ReportController::class, 'sales'])->name('reports.sales');
     Route::get('reports/financial', [ReportController::class, 'financial'])->name('reports.financial');
     Route::get('reports/inventory', [ReportController::class, 'inventory'])->name('reports.inventory');
+
+    // Rotas para configurações
+    Route::get('settings', [\App\Http\Controllers\SettingsController::class, 'index'])->name('settings.index');
+    Route::get('settings/profile', [\App\Http\Controllers\SettingsController::class, 'profile'])->name('settings.profile');
+    Route::put('settings/profile', [\App\Http\Controllers\SettingsController::class, 'updateProfile'])->name('settings.profile.update');
+    Route::put('settings/password', [\App\Http\Controllers\SettingsController::class, 'updatePassword'])->name('settings.password.update');
+    Route::get('settings/system', [\App\Http\Controllers\SettingsController::class, 'system'])->name('settings.system');
+    Route::get('settings/backup', [\App\Http\Controllers\SettingsController::class, 'backup'])->name('settings.backup');
 });
 
 require __DIR__.'/settings.php';

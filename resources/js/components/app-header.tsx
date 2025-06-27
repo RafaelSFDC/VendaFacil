@@ -11,7 +11,7 @@ import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { BarChart3, CreditCard, LayoutGrid, Menu, Package, Search, ShoppingCart, Users } from 'lucide-react';
+import { BarChart3, CreditCard, LayoutGrid, Menu, Package, Search, Settings, ShoppingCart, Users } from 'lucide-react';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
 
@@ -45,6 +45,11 @@ const mainNavItems: NavItem[] = [
         title: 'Relatórios',
         href: '/reports',
         icon: BarChart3,
+    },
+    {
+        title: 'Configurações',
+        href: '/settings',
+        icon: Settings,
     },
 ];
 
