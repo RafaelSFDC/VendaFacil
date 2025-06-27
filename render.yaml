@@ -1,0 +1,68 @@
+services:
+  - type: web
+    name: venda-facil
+    env: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_URL
+        value: https://venda-facil.onrender.com
+      - key: DB_CONNECTION
+        value: sqlite
+      - key: DB_DATABASE
+        value: /var/www/html/database/database.sqlite
+      - key: CACHE_STORE
+        value: file
+      - key: SESSION_DRIVER
+        value: file
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_LEVEL
+        value: info
+      - key: SESSION_LIFETIME
+        value: 120
+      - key: BCRYPT_ROUNDS
+        value: 12
+      - key: FORCE_HTTPS
+        value: true
+      - key: FORCE_SEED
+        value: false
+    healthCheckPath: /up
+    autoDeploy: true
+    buildFilter:
+      paths:
+        - app/**
+        - resources/**
+        - public/**
+        - database/**
+        - routes/**
+        - config/**
+        - bootstrap/**
+        - composer.json
+        - composer.lock
+        - package.json
+        - package-lock.json
+        - vite.config.ts
+        - tsconfig.json
+        - Dockerfile
+        - docker/**
+      ignoredPaths:
+        - node_modules/**
+        - vendor/**
+        - storage/logs/**
+        - storage/framework/cache/**
+        - storage/framework/sessions/**
+        - storage/framework/views/**
+        - .git/**
+        - tests/**
+        - .env*
+        - README.md

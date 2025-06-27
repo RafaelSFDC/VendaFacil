@@ -1,0 +1,137 @@
+# Multi-stage build para otimizar o tamanho da imagem final
+FROM node:22-alpine AS node-builder
+
+WORKDIR /app
+
+# Copiar arquivos de dependências do Node.js
+COPY package*.json ./
+COPY tsconfig.json ./
+COPY vite.config.ts ./
+COPY .prettierrc ./
+COPY eslint.config.js ./
+COPY components.json ./
+
+# Instalar dependências do Node.js
+RUN npm ci --omit=dev --silent
+
+# Copiar código fonte do frontend
+COPY resources/ ./resources/
+COPY public/ ./public/
+
+# Build dos assets
+RUN npm run build
+
+# Stage 2: PHP Runtime
+FROM php:8.4-fpm-alpine AS php-base
+
+# Instalar dependências do sistema
+RUN apk add --no-cache \
+    nginx \
+    supervisor \
+    sqlite \
+    sqlite-dev \
+    zip \
+    unzip \
+    curl \
+    oniguruma-dev \
+    libxml2-dev \
+    freetype-dev \
+    libjpeg-turbo-dev \
+    libpng-dev \
+    libzip-dev
+
+# Instalar extensões PHP
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) \
+        pdo_sqlite \
+        mbstring \
+        xml \
+        gd \
+        zip \
+        opcache
+
+# Instalar Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Configurar diretório de trabalho
+WORKDIR /var/www/html
+
+# Copiar arquivos de dependências do PHP
+COPY composer.json composer.lock ./
+
+# Instalar dependências do PHP (incluindo dev para seeds, depois remover)
+RUN composer install --optimize-autoloader --no-interaction --prefer-dist --no-scripts
+
+# Stage 3: Final Production Image
+FROM php-base AS production
+
+# Copiar código fonte da aplicação
+COPY . .
+
+# Copiar assets buildados do stage anterior
+COPY --from=node-builder /app/public/build ./public/build
+
+# Configurar permissões
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html/storage \
+    && chmod -R 755 /var/www/html/bootstrap/cache
+
+# Criar diretório do banco de dados se não existir
+RUN mkdir -p /var/www/html/database \
+    && touch /var/www/html/database/database.sqlite \
+    && chown -R www-data:www-data /var/www/html/database \
+    && chmod -R 755 /var/www/html/database
+
+# Configurar Nginx
+COPY docker/nginx.conf /etc/nginx/nginx.conf
+COPY docker/default.conf /etc/nginx/http.d/default.conf
+
+# Configurar PHP-FPM
+COPY docker/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
+COPY docker/php.ini /usr/local/etc/php/php.ini
+
+# Configurar Supervisor
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Script de inicialização
+COPY docker/start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
+
+# Executar comandos Laravel
+RUN php artisan config:cache \
+    && php artisan route:cache \
+    && php artisan view:cache
+
+# Remover dependências de desenvolvimento do Composer
+RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+# Expor porta
+EXPOSE 80
+
+# Comando de inicialização
+CMD ["/usr/local/bin/start.sh"]
+
+# Stage para desenvolvimento
+FROM php-base AS development
+
+# Instalar dependências de desenvolvimento
+RUN apk add --no-cache nodejs npm
+
+# Copiar código fonte
+COPY . .
+
+# Manter dependências de desenvolvimento
+RUN composer install --optimize-autoloader --no-interaction --prefer-dist
+
+# Instalar dependências do Node.js
+RUN npm install
+
+# Script de inicialização para desenvolvimento
+COPY docker/start-dev.sh /usr/local/bin/start-dev.sh
+RUN chmod +x /usr/local/bin/start-dev.sh
+
+# Expor portas para desenvolvimento
+EXPOSE 8000 5173
+
+# Comando de inicialização para desenvolvimento
+CMD ["/usr/local/bin/start-dev.sh"]
