@@ -68,8 +68,8 @@ interface InstallmentsIndexProps {
 
 export default function InstallmentsIndex({ installments, stats, filters }: InstallmentsIndexProps) {
     const [search, setSearch] = useState(filters.search || '');
-    const [status, setStatus] = useState(filters.status || '');
-    const [vencimento, setVencimento] = useState(filters.vencimento || '');
+    const [status, setStatus] = useState(filters.status || '#');
+    const [vencimento, setVencimento] = useState(filters.vencimento || '#');
     const [dataInicio, setDataInicio] = useState(filters.data_inicio || '');
     const [dataFim, setDataFim] = useState(filters.data_fim || '');
     const { flash } = usePage().props as any;
@@ -83,10 +83,10 @@ export default function InstallmentsIndex({ installments, stats, filters }: Inst
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        router.get('/installments', { 
-            search, 
-            status: status || undefined,
-            vencimento: vencimento || undefined,
+        router.get('/installments', {
+            search,
+            status: status === '#' ? undefined : status,
+            vencimento: vencimento === '#' ? undefined : vencimento,
             data_inicio: dataInicio || undefined,
             data_fim: dataFim || undefined
         }, { preserveState: true });
@@ -94,8 +94,8 @@ export default function InstallmentsIndex({ installments, stats, filters }: Inst
 
     const clearFilters = () => {
         setSearch('');
-        setStatus('');
-        setVencimento('');
+        setStatus('#');
+        setVencimento('#');
         setDataInicio('');
         setDataFim('');
         router.get('/installments');
@@ -134,7 +134,7 @@ export default function InstallmentsIndex({ installments, stats, filters }: Inst
     };
 
     const isOverdue = (installment: Installment) => {
-        return installment.status === 'pendente' && 
+        return installment.status === 'pendente' &&
                new Date(installment.data_vencimento) < new Date();
     };
 
@@ -143,7 +143,7 @@ export default function InstallmentsIndex({ installments, stats, filters }: Inst
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Parcelas - Venda Fácil" />
-            
+
             <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
@@ -180,7 +180,7 @@ export default function InstallmentsIndex({ installments, stats, filters }: Inst
                             </p>
                         </CardContent>
                     </Card>
-                    
+
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Vencidas</CardTitle>
@@ -193,7 +193,7 @@ export default function InstallmentsIndex({ installments, stats, filters }: Inst
                             </p>
                         </CardContent>
                     </Card>
-                    
+
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-sm font-medium">Vencendo Hoje</CardTitle>
@@ -236,7 +236,7 @@ export default function InstallmentsIndex({ installments, stats, filters }: Inst
                                         <SelectValue placeholder="Todos os status" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">Todos os status</SelectItem>
+                                        <SelectItem value="#">Todos os status</SelectItem>
                                         <SelectItem value="pendente">Pendente</SelectItem>
                                         <SelectItem value="pago">Pago</SelectItem>
                                         <SelectItem value="vencido">Vencido</SelectItem>
@@ -249,7 +249,7 @@ export default function InstallmentsIndex({ installments, stats, filters }: Inst
                                         <SelectValue placeholder="Vencimento" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">Todos</SelectItem>
+                                        <SelectItem value="#">Todos</SelectItem>
                                         <SelectItem value="vencidas">Vencidas</SelectItem>
                                         <SelectItem value="hoje">Hoje</SelectItem>
                                         <SelectItem value="proximos_7_dias">Próximos 7 dias</SelectItem>
@@ -316,7 +316,7 @@ export default function InstallmentsIndex({ installments, stats, filters }: Inst
                                                     #{installment.numero_parcela}
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Link 
+                                                    <Link
                                                         href={`/customers/${installment.sale.customer.id}`}
                                                         className="text-blue-600 hover:underline"
                                                     >
@@ -324,7 +324,7 @@ export default function InstallmentsIndex({ installments, stats, filters }: Inst
                                                     </Link>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Link 
+                                                    <Link
                                                         href={`/sales/${installment.sale.id}`}
                                                         className="text-blue-600 hover:underline"
                                                     >
@@ -343,7 +343,7 @@ export default function InstallmentsIndex({ installments, stats, filters }: Inst
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
-                                                    {installment.data_pagamento 
+                                                    {installment.data_pagamento
                                                         ? new Date(installment.data_pagamento).toLocaleDateString('pt-BR')
                                                         : '-'
                                                     }
@@ -372,7 +372,7 @@ export default function InstallmentsIndex({ installments, stats, filters }: Inst
                             <div className="text-center py-8">
                                 <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                                 <p className="text-muted-foreground mb-4">
-                                    {hasFilters 
+                                    {hasFilters
                                         ? 'Nenhuma parcela encontrada com os filtros aplicados.'
                                         : 'Nenhuma parcela registrada ainda.'
                                     }

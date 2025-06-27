@@ -51,9 +51,9 @@ interface ProductsIndexProps {
 
 export default function ProductsIndex({ products, categorias, filters }: ProductsIndexProps) {
     const [search, setSearch] = useState(filters.search || '');
-    const [categoria, setCategoria] = useState(filters.categoria || '');
-    const [status, setStatus] = useState(filters.status || '');
-    const [estoqueBaixo, setEstoqueBaixo] = useState(filters.estoque_baixo || '');
+    const [categoria, setCategoria] = useState(filters.categoria || '#');
+    const [status, setStatus] = useState(filters.status || '#');
+    const [estoqueBaixo, setEstoqueBaixo] = useState(filters.estoque_baixo || '#');
     const { flash } = usePage().props as any;
 
     const formatCurrency = (value: number) => {
@@ -65,19 +65,19 @@ export default function ProductsIndex({ products, categorias, filters }: Product
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        router.get('/products', { 
-            search, 
-            categoria: categoria || undefined,
-            status: status || undefined,
-            estoque_baixo: estoqueBaixo || undefined
+        router.get('/products', {
+            search,
+            categoria: categoria === '#' ? undefined : categoria,
+            status: status === '#' ? undefined : status,
+            estoque_baixo: estoqueBaixo === '#' ? undefined : estoqueBaixo
         }, { preserveState: true });
     };
 
     const clearFilters = () => {
         setSearch('');
-        setCategoria('');
-        setStatus('');
-        setEstoqueBaixo('');
+        setCategoria('#');
+        setStatus('#');
+        setEstoqueBaixo('#');
         router.get('/products');
     };
 
@@ -92,7 +92,7 @@ export default function ProductsIndex({ products, categorias, filters }: Product
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Produtos - Venda Fácil" />
-            
+
             <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
@@ -145,7 +145,7 @@ export default function ProductsIndex({ products, categorias, filters }: Product
                                         <SelectValue placeholder="Todas as categorias" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">Todas as categorias</SelectItem>
+                                        <SelectItem value="#">Todas as categorias</SelectItem>
                                         {categorias.map((cat) => (
                                             <SelectItem key={cat} value={cat}>
                                                 {cat}
@@ -160,7 +160,7 @@ export default function ProductsIndex({ products, categorias, filters }: Product
                                         <SelectValue placeholder="Todos os status" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">Todos os status</SelectItem>
+                                        <SelectItem value="#">Todos os status</SelectItem>
                                         <SelectItem value="ativo">Ativo</SelectItem>
                                         <SelectItem value="inativo">Inativo</SelectItem>
                                     </SelectContent>
@@ -172,7 +172,7 @@ export default function ProductsIndex({ products, categorias, filters }: Product
                                         <SelectValue placeholder="Estoque" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">Todos os estoques</SelectItem>
+                                        <SelectItem value="#">Todos os estoques</SelectItem>
                                         <SelectItem value="1">Estoque baixo (≤5)</SelectItem>
                                     </SelectContent>
                                 </Select>
@@ -242,8 +242,8 @@ export default function ProductsIndex({ products, categorias, filters }: Product
                                                 </TableCell>
                                                 <TableCell>
                                                     <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                                        product.ativo 
-                                                            ? 'bg-green-100 text-green-800' 
+                                                        product.ativo
+                                                            ? 'bg-green-100 text-green-800'
                                                             : 'bg-red-100 text-red-800'
                                                     }`}>
                                                         {product.ativo ? 'Ativo' : 'Inativo'}
@@ -264,8 +264,8 @@ export default function ProductsIndex({ products, categorias, filters }: Product
                                                                 <Edit className="h-4 w-4" />
                                                             </Link>
                                                         </Button>
-                                                        <Button 
-                                                            size="sm" 
+                                                        <Button
+                                                            size="sm"
                                                             variant="outline"
                                                             onClick={() => handleDelete(product)}
                                                         >
@@ -282,7 +282,7 @@ export default function ProductsIndex({ products, categorias, filters }: Product
                             <div className="text-center py-8">
                                 <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                                 <p className="text-muted-foreground mb-4">
-                                    {hasFilters 
+                                    {hasFilters
                                         ? 'Nenhum produto encontrado com os filtros aplicados.'
                                         : 'Nenhum produto cadastrado ainda.'
                                     }

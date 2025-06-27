@@ -59,7 +59,7 @@ interface SalesIndexProps {
 
 export default function SalesIndex({ sales, filters }: SalesIndexProps) {
     const [search, setSearch] = useState(filters.search || '');
-    const [status, setStatus] = useState(filters.status || '');
+    const [status, setStatus] = useState(filters.status || '#');
     const [dataInicio, setDataInicio] = useState(filters.data_inicio || '');
     const [dataFim, setDataFim] = useState(filters.data_fim || '');
     const { flash } = usePage().props as any;
@@ -73,9 +73,9 @@ export default function SalesIndex({ sales, filters }: SalesIndexProps) {
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        router.get('/sales', { 
-            search, 
-            status: status || undefined,
+        router.get('/sales', {
+            search,
+            status: status === '#' ? undefined : status,
             data_inicio: dataInicio || undefined,
             data_fim: dataFim || undefined
         }, { preserveState: true });
@@ -83,7 +83,7 @@ export default function SalesIndex({ sales, filters }: SalesIndexProps) {
 
     const clearFilters = () => {
         setSearch('');
-        setStatus('');
+        setStatus('#');
         setDataInicio('');
         setDataFim('');
         router.get('/sales');
@@ -113,7 +113,7 @@ export default function SalesIndex({ sales, filters }: SalesIndexProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Vendas - Venda Fácil" />
-            
+
             <div className="flex h-full flex-1 flex-col gap-6 p-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
@@ -166,7 +166,7 @@ export default function SalesIndex({ sales, filters }: SalesIndexProps) {
                                         <SelectValue placeholder="Todos os status" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="">Todos os status</SelectItem>
+                                        <SelectItem value="#">Todos os status</SelectItem>
                                         <SelectItem value="pendente">Pendente</SelectItem>
                                         <SelectItem value="pago">Pago</SelectItem>
                                         <SelectItem value="cancelado">Cancelado</SelectItem>
@@ -242,7 +242,7 @@ export default function SalesIndex({ sales, filters }: SalesIndexProps) {
                                                     #{sale.id}
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Link 
+                                                    <Link
                                                         href={`/customers/${sale.customer.id}`}
                                                         className="text-blue-600 hover:underline"
                                                     >
@@ -281,8 +281,8 @@ export default function SalesIndex({ sales, filters }: SalesIndexProps) {
                                                                 <Edit className="h-4 w-4" />
                                                             </Link>
                                                         </Button>
-                                                        <Button 
-                                                            size="sm" 
+                                                        <Button
+                                                            size="sm"
                                                             variant="outline"
                                                             onClick={() => handleDelete(sale)}
                                                         >
@@ -299,7 +299,7 @@ export default function SalesIndex({ sales, filters }: SalesIndexProps) {
                             <div className="text-center py-8">
                                 <ShoppingCart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                                 <p className="text-muted-foreground mb-4">
-                                    {hasFilters 
+                                    {hasFilters
                                         ? 'Nenhuma venda encontrada com os filtros aplicados.'
                                         : 'Nenhuma venda registrada ainda.'
                                     }
