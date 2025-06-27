@@ -1,15 +1,17 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, Calendar, Minus, Package, Plus, Save, ShoppingCart, Trash2, User, RefreshCw, AlertTriangle } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -64,6 +66,7 @@ export default function SalesCreate({ customers, products }: SalesCreateProps) {
     const [quantity, setQuantity] = useState<number>(1);
     const [installments, setInstallments] = useState<Installment[]>([]);
     const [isCustomInstallments, setIsCustomInstallments] = useState<boolean>(false);
+    const toast = useToast();
 
     const { data, setData, post, processing, errors } = useForm({
         customer_id: '',
@@ -73,6 +76,33 @@ export default function SalesCreate({ customers, products }: SalesCreateProps) {
         items: [] as any[],
         parcelas: [] as any[],
     });
+
+    const getTotal = () => {
+        return cart.reduce((sum, item) => sum + item.subtotal, 0);
+    };
+
+    const getFinalValue = () => {
+        const total = getTotal();
+        const desconto = parseFloat(data.desconto) || 0;
+        return total - desconto;
+    };
+
+    // Atualizar parcelas automaticamente quando o carrinho ou desconto mudam
+    useEffect(() => {
+        if (installments.length > 0 && !isCustomInstallments) {
+            const total = getTotal();
+            const desconto = parseFloat(data.desconto) || 0;
+            const valorFinal = total - desconto;
+            const valorParcela = valorFinal / installments.length;
+
+            const updatedInstallments = installments.map(installment => ({
+                ...installment,
+                valor: valorParcela
+            }));
+
+            setInstallments(updatedInstallments);
+        }
+    }, [cart, data.desconto]); // Dependências: carrinho e desconto
 
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('pt-BR', {
@@ -88,7 +118,7 @@ export default function SalesCreate({ customers, products }: SalesCreateProps) {
         if (!product) return;
 
         if (quantity > product.estoque) {
-            alert(`Estoque insuficiente. Disponível: ${product.estoque}`);
+            toast.error(`Estoque insuficiente. Disponível: ${product.estoque}`);
             return;
         }
 
@@ -97,7 +127,7 @@ export default function SalesCreate({ customers, products }: SalesCreateProps) {
         if (existingItem) {
             const newQuantity = existingItem.quantidade + quantity;
             if (newQuantity > product.estoque) {
-                alert(`Estoque insuficiente. Disponível: ${product.estoque}`);
+                toast.error(`Estoque insuficiente. Disponível: ${product.estoque}`);
                 return;
             }
 
@@ -135,7 +165,7 @@ export default function SalesCreate({ customers, products }: SalesCreateProps) {
         if (!product) return;
 
         if (newQuantity > product.estoque) {
-            alert(`Estoque insuficiente. Disponível: ${product.estoque}`);
+            toast.error(`Estoque insuficiente. Disponível: ${product.estoque}`);
             return;
         }
 
@@ -214,7 +244,22 @@ export default function SalesCreate({ customers, products }: SalesCreateProps) {
     };
 
     const removeInstallment = (index: number) => {
-        setInstallments(installments.filter((_, i) => i !== index));
+        const newInstallments = installments.filter((_, i) => i !== index);
+
+        // Se não há parcelas customizadas, redistribuir automaticamente
+        if (!isCustomInstallments && newInstallments.length > 0) {
+            const total = getFinalValue();
+            const valorParcela = total / newInstallments.length;
+
+            const redistributedInstallments = newInstallments.map(installment => ({
+                ...installment,
+                valor: valorParcela
+            }));
+
+            setInstallments(redistributedInstallments);
+        } else {
+            setInstallments(newInstallments);
+        }
     };
 
     const generateEqualInstallments = (numParcelas: number) => {
@@ -246,15 +291,7 @@ export default function SalesCreate({ customers, products }: SalesCreateProps) {
         }
     };
 
-    const getTotal = () => {
-        return cart.reduce((sum, item) => sum + item.subtotal, 0);
-    };
 
-    const getFinalValue = () => {
-        const total = getTotal();
-        const desconto = parseFloat(data.desconto) || 0;
-        return total - desconto;
-    };
 
     const getInstallmentsTotal = () => {
         return installments.reduce((sum, installment) => sum + (installment.valor || 0), 0);
@@ -273,7 +310,7 @@ export default function SalesCreate({ customers, products }: SalesCreateProps) {
         e.preventDefault();
 
         if (cart.length === 0) {
-            alert('Adicione pelo menos um produto ao carrinho');
+            toast.error('Adicione pelo menos um produto ao carrinho');
             return;
         }
 
@@ -348,16 +385,12 @@ export default function SalesCreate({ customers, products }: SalesCreateProps) {
 
                                     <div>
                                         <Label htmlFor="data_venda">Data da Venda *</Label>
-                                        <div className="relative">
-                                            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                                            <Input
-                                                id="data_venda"
-                                                type="date"
-                                                value={data.data_venda}
-                                                onChange={(e) => setData('data_venda', e.target.value)}
-                                                className={`pl-10 ${errors.data_venda ? 'border-red-500' : ''}`}
-                                            />
-                                        </div>
+                                        <DatePicker
+                                            date={data.data_venda ? new Date(data.data_venda) : undefined}
+                                            onDateChange={(date) => setData('data_venda', date ? date.toISOString().split('T')[0] : '')}
+                                            placeholder="Selecione a data da venda"
+                                            className={errors.data_venda ? 'border-red-500' : ''}
+                                        />
                                         {errors.data_venda && (
                                             <p className="text-sm text-red-500 mt-1">{errors.data_venda}</p>
                                         )}
@@ -655,12 +688,13 @@ export default function SalesCreate({ customers, products }: SalesCreateProps) {
                                                                 onChange={(e) => updateInstallment(index, 'valor', parseFloat(e.target.value) || 0)}
                                                                 className="flex-1"
                                                             />
-                                                            <Input
-                                                                type="date"
-                                                                value={installment.data_vencimento}
-                                                                onChange={(e) => updateInstallment(index, 'data_vencimento', e.target.value)}
-                                                                className="flex-1"
-                                                            />
+                                                            <div className="flex-1">
+                                                                <DatePicker
+                                                                    date={installment.data_vencimento ? new Date(installment.data_vencimento) : undefined}
+                                                                    onDateChange={(date) => updateInstallment(index, 'data_vencimento', date ? date.toISOString().split('T')[0] : '')}
+                                                                    placeholder="Data de vencimento"
+                                                                />
+                                                            </div>
                                                             <Button
                                                                 type="button"
                                                                 size="sm"
@@ -705,10 +739,10 @@ export default function SalesCreate({ customers, products }: SalesCreateProps) {
 
                                                                 <div>
                                                                     <Label className="text-xs text-muted-foreground">Data de Vencimento</Label>
-                                                                    <Input
-                                                                        type="date"
-                                                                        value={installment.data_vencimento}
-                                                                        onChange={(e) => updateInstallment(index, 'data_vencimento', e.target.value)}
+                                                                    <DatePicker
+                                                                        date={installment.data_vencimento ? new Date(installment.data_vencimento) : undefined}
+                                                                        onDateChange={(date) => updateInstallment(index, 'data_vencimento', date ? date.toISOString().split('T')[0] : '')}
+                                                                        placeholder="Data de vencimento"
                                                                         className="text-sm"
                                                                     />
                                                                 </div>
