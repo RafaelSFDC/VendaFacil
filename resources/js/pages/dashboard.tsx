@@ -21,12 +21,17 @@ interface DashboardProps {
         overdue_installments: number;
         monthly_revenue: number;
         low_stock_products: number;
+        revenue_growth: number;
+        sales_growth: number;
     };
+    sales_chart: any[];
+    top_products: any[];
     recent_sales: any[];
     upcoming_installments: any[];
+    low_stock_products: any[];
 }
 
-export default function Dashboard({ stats, recent_sales, upcoming_installments }: DashboardProps) {
+export default function Dashboard({ stats, sales_chart, top_products, recent_sales, upcoming_installments, low_stock_products }: DashboardProps) {
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('pt-BR', {
             style: 'currency',
@@ -86,6 +91,14 @@ export default function Dashboard({ stats, recent_sales, upcoming_installments }
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{formatCurrency(stats.monthly_revenue)}</div>
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                Receita deste mês
+                                {stats.revenue_growth !== 0 && (
+                                    <span className={`text-xs ${stats.revenue_growth > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        ({stats.revenue_growth > 0 ? '+' : ''}{stats.revenue_growth.toFixed(1)}%)
+                                    </span>
+                                )}
+                            </p>
                         </CardContent>
                     </Card>
                 </div>
@@ -112,6 +125,80 @@ export default function Dashboard({ stats, recent_sales, upcoming_installments }
                         </CardContent>
                     </Card>
                 </div>
+
+                {/* Top Produtos */}
+                {top_products.length > 0 && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <TrendingUp className="h-5 w-5" />
+                                Top Produtos do Mês
+                            </CardTitle>
+                            <CardDescription>
+                                Produtos mais vendidos este mês
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-3">
+                                {top_products.map((product: any, index: number) => (
+                                    <div key={product.product_id} className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-medium text-blue-600">
+                                                {index + 1}
+                                            </div>
+                                            <div>
+                                                <p className="font-medium">{product.nome}</p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    {product.total_vendido} unidades
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="font-medium">{formatCurrency(product.receita_total)}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Produtos com Estoque Baixo */}
+                {low_stock_products.length > 0 && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <AlertTriangle className="h-5 w-5 text-orange-500" />
+                                Produtos com Estoque Baixo
+                            </CardTitle>
+                            <CardDescription>
+                                Produtos que precisam de reposição (≤5 unidades)
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-3">
+                                {low_stock_products.map((product: any) => (
+                                    <div key={product.id} className="flex items-center justify-between">
+                                        <div>
+                                            <p className="font-medium">{product.nome}</p>
+                                            <p className="text-sm text-muted-foreground">
+                                                {product.categoria || 'Sem categoria'}
+                                            </p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className={`font-medium ${product.estoque === 0 ? 'text-red-600' : 'text-orange-600'}`}>
+                                                {product.estoque} unidades
+                                            </p>
+                                            <p className="text-sm text-muted-foreground">
+                                                {formatCurrency(product.preco)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {/* Seções de Listas */}
                 <div className="grid gap-4 md:grid-cols-2">
